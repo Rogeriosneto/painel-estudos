@@ -1,0 +1,1580 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel de Estudos - TRTs 2027</title>
+    <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+        .check-teoria:checked { background-color: #3b82f6; border-color: #3b82f6; }
+        .check-revisao:checked { background-color: #f59e0b; border-color: #f59e0b; }
+        .check-questoes:checked { background-color: #10b981; border-color: #10b981; }
+        
+        /* Animações Customizadas */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in { animation: fadeIn 0.4s ease-out forwards; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const DEFAULT_EDITAL = [
+            {
+                categoria: "Conhecimentos Gerais",
+                disciplinas: [
+                    {
+                        nome: "Língua Portuguesa",
+                        topicos: [
+                            "Redação Oficial (padrão oficial, clareza, concisão).",
+                            "Ortografia e acentuação gráfica.",
+                            "Emprego do sinal indicativo de crase.",
+                            "Compreensão e interpretação de textos de gêneros variados.",
+                            "Relação do texto com seu contexto histórico.",
+                            "Denotação e conotação.",
+                            "Discurso direto, indireto e indireto livre.",
+                            "Intertextualidade e Figuras de linguagem.",
+                            "Morfossintaxe e classes de palavras.",
+                            "Elementos estruturais e processos de formação de palavras.",
+                            "Sinonímia e antonímia.",
+                            "Pontuação e seus efeitos de sentido.",
+                            "Emprego e colocação dos Pronomes.",
+                            "Concordância nominal e verbal.",
+                            "Flexão nominal e verbal.",
+                            "Vozes do verbo e correlação de tempos e modos verbais.",
+                            "Regência nominal e verbal.",
+                            "Período composto: Coordenação e subordinação.",
+                            "Emprego dos conectivos.",
+                            "Redação: confronto/reconhecimento de frases, organização de orações, equivalência."
+                        ]
+                    },
+                    {
+                        nome: "Matemática e Raciocínio Lógico",
+                        topicos: [
+                            "Estrutura lógica de relações arbitrárias; dedução e avaliação de condições.",
+                            "Raciocínio verbal, matemático, sequencial, orientação espacial e temporal.",
+                            "Formação de conceitos e discriminação de elementos.",
+                            "Processo lógico dedutivo a partir de conjuntos de hipóteses.",
+                            "Números inteiros e racionais: operações, expressões, múltiplos, divisores e problemas.",
+                            "Frações e operações com frações.",
+                            "Razões e proporções, divisão proporcional, regra de três (simples e composta).",
+                            "Porcentagem, acréscimos e descontos.",
+                            "Probabilidade: espaço amostral, eventos, união, intersecção, complementar, condicional.",
+                            "Estatística: medidas de tendência central e dispersão.",
+                            "Leitura e interpretação de gráficos e tabelas."
+                        ]
+                    },
+                    {
+                        nome: "Noções de Legislação e Normas Internas",
+                        topicos: [
+                            "Lei nº 8.112/1990 (Regime jurídico dos servidores públicos civis da União).",
+                            "Sustentabilidade: Resolução CNJ nº 550/2024.",
+                            "Código de Ética do TRT-6: Resolução Administrativa nº 35/2023.",
+                            "Regimento Interno do TRT-6: Resolução Administrativa nº 22/2021.",
+                            "Prevenção à Violência e Assédio: Resolução Administrativa TRT6-GP n° 29/2023 e 2/2024."
+                        ]
+                    },
+                    {
+                        nome: "Noções de Direitos Humanos",
+                        topicos: [
+                            "Evolução histórica, fundamentos, fontes, classificação, princípios, gerações.",
+                            "Interpretação de tratados e colisão entre direitos humanos.",
+                            "Tratados Internacionais e a CF/88; Controle de convencionalidade.",
+                            "Documentos Internacionais (DUDH, PIDCP, PIDESC, Convenções).",
+                            "Meio Ambiente e Povos Originários.",
+                            "Sistema Interamericano (Declaração Americana, CADH, Protocolo de San Salvador).",
+                            "Grupos Vulneráveis e Minorias.",
+                            "Políticas Judiciárias (Resoluções CNJ 492/2023 e CSJT 368/2023)."
+                        ]
+                    },
+                    {
+                        nome: "Noções de Informática",
+                        topicos: [
+                            "Sistemas Operacionais: Windows 10 e 11.",
+                            "Ferramentas de Produtividade (Google Workspace e MS Office 365).",
+                            "Google Drive: Criação, edição, compartilhamento e permissões.",
+                            "Google Agenda e Meet.",
+                            "Gmail: Configurações, painel e marcadores.",
+                            "Redes de Computadores: conceitos básicos, internet, intranet.",
+                            "Navegadores Web: Firefox, Chrome e Edge.",
+                            "Mecanismos de Busca: Google e Bing.",
+                            "Segurança da Informação: procedimentos, pragas virtuais, boas práticas."
+                        ]
+                    }
+                ]
+            },
+            {
+                categoria: "Conhecimentos Específicos",
+                disciplinas: [
+                    {
+                        nome: "Direito Constitucional",
+                        topicos: [
+                            "Aplicabilidade e interpretação das normas constitucionais.",
+                            "Controle de Constitucionalidade (difuso, concentrado, ADI, ADC, ADPF).",
+                            "Princípios Fundamentais da República.",
+                            "Direitos e Garantias Fundamentais.",
+                            "Partidos Políticos.",
+                            "Organização do Estado e Administração Pública.",
+                            "Organização dos Poderes (Executivo e Legislativo).",
+                            "Poder Judiciário (STF, CNJ, STJ, TST, TRTs, CSJT).",
+                            "Funções Essenciais à Justiça."
+                        ]
+                    },
+                    {
+                        nome: "Direito Administrativo",
+                        topicos: [
+                            "Administração Pública: regime jurídico e princípios.",
+                            "LINDB e sua aplicação na Administração Pública.",
+                            "Poderes Administrativos e Lei de Abuso de Autoridade.",
+                            "Ato Administrativo (conceito, atributos, requisitos, classificação, extinção).",
+                            "Processo Administrativo Federal (Lei nº 9.784/1999).",
+                            "Controle da Administração Pública.",
+                            "Lei de Improbidade Administrativa (Lei nº 8.429/1992 e 14.230/2021).",
+                            "Licitações e Contratos (Lei nº 14.133/2021).",
+                            "Parcerias com o Terceiro Setor.",
+                            "Serviços Públicos e PPPs.",
+                            "Agentes Públicos e Responsabilidade Civil.",
+                            "Bens Públicos.",
+                            "Lei de Acesso à Informação (LAI) e LGPD."
+                        ]
+                    },
+                    {
+                        nome: "Direito do Trabalho",
+                        topicos: [
+                            "Princípios e fontes; Direitos constitucionais dos trabalhadores.",
+                            "Relação de trabalho vs. relação de emprego; espécies de trabalho.",
+                            "Sujeitos do contrato de trabalho (empregado, empregador, grupo, sucessão).",
+                            "Contrato Individual de Trabalho (alteração, suspensão e interrupção).",
+                            "Rescisão do Contrato de Trabalho e Estabilidades.",
+                            "Duração do trabalho (jornada, intervalos, DSR, noturno, extra).",
+                            "Salário, remuneração, férias, 13º e equiparação salarial.",
+                            "FGTS, prescrição e decadência trabalhista.",
+                            "Segurança e medicina no trabalho (CIPA, insalubridade, periculosidade).",
+                            "Proteção ao trabalho da mulher e do menor.",
+                            "Direito Coletivo (liberdade sindical, acordos, greve).",
+                            "Teletrabalho e dano moral/material.",
+                            "Jurisprudência Uniformizada (Súmulas e OJs)."
+                        ]
+                    },
+                    {
+                        nome: "Direito Processual do Trabalho",
+                        topicos: [
+                            "Organização e competência da Justiça do Trabalho; Serviços auxiliares e MPT.",
+                            "Princípios, aplicação do CPC, prescrição e decadência.",
+                            "Atos, prazos, custas e distribuição.",
+                            "Partes, procuradores, jus postulandi e honorários advocatícios.",
+                            "Nulidades e exceções.",
+                            "Audiências, revelia, confissão e provas.",
+                            "Dissídios individuais (procedimento ordinário e sumaríssimo).",
+                            "Procedimentos Especiais (inquérito, ação rescisória, MS, ACP).",
+                            "Sentença, coisa julgada e liquidação.",
+                            "Dissídios Coletivos e sentença normativa.",
+                            "Execução (provisória, contra Fazenda, penhora, garantias).",
+                            "Embargos à execução, praça, leilão e arrematação.",
+                            "Recursos no Processo do Trabalho.",
+                            "PJe e precedentes obrigatórios (Súmulas, OJs)."
+                        ]
+                    },
+                    {
+                        nome: "Direito Civil",
+                        topicos: [
+                            "Pessoa Natural, Pessoas Jurídicas e Domicílio.",
+                            "Bens (classificação, afetação).",
+                            "Negócio Jurídico (elementos, defeitos e invalidade).",
+                            "Prescrição, decadência e Prova.",
+                            "Direito das Obrigações e Contratos em geral.",
+                            "Direito de Empresa.",
+                            "Direito das Coisas e Posse.",
+                            "Propriedade e Direitos Reais sobre coisa alheia e em garantia.",
+                            "Direito de Família (casamento, união estável, filiação, bem de família).",
+                            "Direito das Sucessões."
+                        ]
+                    },
+                    {
+                        nome: "Direito Processual Civil",
+                        topicos: [
+                            "Jurisdição, ação e atores do processo.",
+                            "Partes, procuradores, litisconsórcio e intervenção de terceiros.",
+                            "Competência.",
+                            "Atos processuais, nulidades e preclusão.",
+                            "Processo de Conhecimento (inicial, resposta do réu, tutela provisória).",
+                            "Provas e Audiência de instrução.",
+                            "Sentença, coisa julgada e cumprimento de sentença.",
+                            "Ação Rescisória e Recursos.",
+                            "Processo de Execução.",
+                            "Procedimentos Especiais (monitória, possessórias, MS, ACP).",
+                            "Juizados Especiais e Mediação."
+                        ]
+                    }
+                ]
+            }
+        ];
+
+        const Icons = {
+            LayoutDashboard: () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>,
+            ListChecks: () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m3 17 2 2 4-4"/><path d="m3 7 2 2 4-4"/><path d="M13 6h8"/><path d="M13 12h8"/><path d="M13 18h8"/></svg>,
+            Calendar: () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>,
+            ChevronDown: () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6"/></svg>,
+            Award: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"/></svg>,
+            BookOpen: () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>,
+            Timer: () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2"/><path d="M5 3 2 6"/><path d="m22 6-3-3"/><path d="M6.38 18.7 4 21"/><path d="M17.64 18.67 20 21"/></svg>,
+            Target: () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>,
+            Edit3: () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>,
+            Trash: () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>,
+            Plus: () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>,
+            Play: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>,
+            Pause: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>,
+            Square: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/></svg>,
+            RefreshCcw: () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 2v6h6"/><path d="M21 12A9 9 0 0 0 6 5.3L3 8"/><path d="M21 22v-6h-6"/><path d="M3 12a9 9 0 0 0 15 6.7l3-2.7"/></svg>,
+            Save: () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>,
+            TrendingUp: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"></polyline><polyline points="16 7 22 7 22 13"></polyline></svg>,
+            CalendarClock: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 7.5V6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h7.5"></path><path d="M16 2v4"></path><path d="M8 2v4"></path><path d="M3 10h18"></path><circle cx="18" cy="18" r="4"></circle><path d="M18 16.5V18l.5.5"></path></svg>,
+            Sparkles: () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>
+        };
+
+        // Configuração do armazenamento em nuvem (Supabase)
+        const SUPABASE_URL = 'https://uqwxcuepvyafdpunmxlf.supabase.co';
+        const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_ujkVYv5_PuMAhM7K0POjbg_0n9st192';
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+        const CLOUD_TABLE = 'study_dashboard';
+        const STORAGE_KEYS = [
+            'trt6_edital_data_v2', 'trt6_progress_v2', 'trt6_schedule', 'trt6_startDate',
+            'trt6_netStudyTime', 'trt6_studyEntries_v1', 'trt6_performance',
+            'trt6_timerType', 'trt6_pomoConfig'
+        ];
+
+        function useLocalStorage(key, initialValue) {
+            const [storedValue, setStoredValue] = React.useState(() => {
+                try {
+                    const item = window.localStorage.getItem(key);
+                    return item ? JSON.parse(item) : initialValue;
+                } catch (error) {
+                    console.error("Erro ao ler localStorage", error);
+                    return initialValue;
+                }
+            });
+
+            React.useEffect(() => {
+                try {
+                    window.localStorage.setItem(key, JSON.stringify(storedValue));
+                } catch (error) {
+                    console.error("Erro ao salvar no localStorage", error);
+                }
+            }, [key, storedValue]);
+
+            return [storedValue, setStoredValue];
+        }
+
+        function App({ user, onLogout }) {
+            // Estados Gerais
+            const [activeTab, setActiveTab] = React.useState('dashboard');
+            const [toast, setToast] = React.useState(null);
+            
+            // Estados de Dados (Persistidos)
+            const [editalData, setEditalData] = useLocalStorage('trt6_edital_data_v2', DEFAULT_EDITAL);
+            const [progress, setProgress] = useLocalStorage('trt6_progress_v2', {});
+            const [schedule, setSchedule] = useLocalStorage('trt6_schedule', { Segunda: "", Terça: "", Quarta: "", Quinta: "", Sexta: "", Sábado: "", Domingo: "" });
+            const [startDate, setStartDate] = useLocalStorage('trt6_startDate', new Date().toISOString());
+            
+            // Estados de Configuração e Controle
+            const [isEditingEdital, setIsEditingEdital] = React.useState(false);
+            const [netStudyTime, setNetStudyTime] = useLocalStorage('trt6_netStudyTime', 0); // em segundos
+            const [studyEntries, setStudyEntries] = useLocalStorage('trt6_studyEntries_v1', []);
+            const [performanceData, setPerformanceData] = useLocalStorage('trt6_performance', {});
+            const [perfForm, setPerfForm] = React.useState({ disciplina: editalData[0].disciplinas[0].nome, total: 0, acertos: 0 });
+            const getLocalDateString = () => {
+                const d = new Date();
+                return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+            };
+            const getAllDisciplines = () => {
+                const list = [];
+                editalData.forEach(cat => cat.disciplinas.forEach(d => list.push(d.nome)));
+                return list;
+            };
+            const [manualStudyForm, setManualStudyForm] = React.useState({
+                date: getLocalDateString(),
+                disciplina: editalData[0].disciplinas[0].nome,
+                hours: '',
+                minutes: '',
+                notes: ''
+            });
+            const [editingStudyId, setEditingStudyId] = React.useState(null);
+
+            // Estados dos Timers
+            const [timerType, setTimerType] = useLocalStorage('trt6_timerType', 'pomodoro');
+            const [pomoConfig, setPomoConfig] = useLocalStorage('trt6_pomoConfig', { focusTime: 25, shortBreak: 5, longBreak: 15, cyclesForLongBreak: 4 });
+
+            // Sincronização com a nuvem
+            const [cloudReady, setCloudReady] = React.useState(false);
+            const [syncStatus, setSyncStatus] = React.useState('Carregando...');
+            const [cloudError, setCloudError] = React.useState(null);
+            const saveTimerRef = React.useRef(null);
+
+            const getDashboardSnapshot = React.useCallback(() => ({
+                trt6_edital_data_v2: editalData,
+                trt6_progress_v2: progress,
+                trt6_schedule: schedule,
+                trt6_startDate: startDate,
+                trt6_netStudyTime: netStudyTime,
+                trt6_studyEntries_v1: studyEntries,
+                trt6_performance: performanceData,
+                trt6_timerType: timerType,
+                trt6_pomoConfig: pomoConfig
+            }), [editalData, progress, schedule, startDate, netStudyTime, studyEntries, performanceData, timerType, pomoConfig]);
+
+            const applyDashboardSnapshot = React.useCallback((data) => {
+                if (!data || typeof data !== 'object') return;
+                if (data.trt6_edital_data_v2) setEditalData(data.trt6_edital_data_v2);
+                if (data.trt6_progress_v2) setProgress(data.trt6_progress_v2);
+                if (data.trt6_schedule) setSchedule(data.trt6_schedule);
+                if (data.trt6_startDate) setStartDate(data.trt6_startDate);
+                if (typeof data.trt6_netStudyTime === 'number') setNetStudyTime(data.trt6_netStudyTime);
+                if (Array.isArray(data.trt6_studyEntries_v1)) setStudyEntries(data.trt6_studyEntries_v1);
+                if (data.trt6_performance) setPerformanceData(data.trt6_performance);
+                if (data.trt6_timerType) setTimerType(data.trt6_timerType);
+                if (data.trt6_pomoConfig) setPomoConfig(data.trt6_pomoConfig);
+            }, [setEditalData, setProgress, setSchedule, setStartDate, setNetStudyTime, setStudyEntries, setPerformanceData, setTimerType, setPomoConfig]);
+
+            // Carrega os dados da nuvem. Se ainda não houver dados na nuvem,
+            // o conteúdo local deste computador é usado como primeira migração.
+            React.useEffect(() => {
+                let cancelled = false;
+                (async () => {
+                    setSyncStatus('Conectando...');
+                    setCloudError(null);
+                    const { data: row, error } = await supabase
+                        .from(CLOUD_TABLE)
+                        .select('data, updated_at')
+                        .eq('id', user.id)
+                        .maybeSingle();
+
+                    if (cancelled) return;
+                    if (error) {
+                        console.error(error);
+                        setCloudError(error.message || 'Não foi possível acessar a nuvem.');
+                        setSyncStatus('Erro na nuvem');
+                        return;
+                    }
+
+                    if (row && row.data) {
+                        applyDashboardSnapshot(row.data);
+                        setSyncStatus('Sincronizado');
+                    } else {
+                        const localSnapshot = getDashboardSnapshot();
+                        const { error: insertError } = await supabase
+                            .from(CLOUD_TABLE)
+                            .upsert({ id: user.id, data: localSnapshot, updated_at: new Date().toISOString() });
+                        if (cancelled) return;
+                        if (insertError) {
+                            console.error(insertError);
+                            setCloudError(insertError.message || 'Não foi possível migrar os dados.');
+                            setSyncStatus('Erro na migração');
+                            return;
+                        }
+                        setSyncStatus('Dados migrados para a nuvem');
+                    }
+                    setCloudReady(true);
+                })();
+                return () => { cancelled = true; };
+            }, [user.id]);
+
+            // Salva alterações na nuvem com pequeno atraso para evitar excesso de requisições.
+            React.useEffect(() => {
+                if (!cloudReady) return;
+                if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+                saveTimerRef.current = setTimeout(async () => {
+                    setSyncStatus('Salvando...');
+                    const { error } = await supabase
+                        .from(CLOUD_TABLE)
+                        .upsert({ id: user.id, data: getDashboardSnapshot(), updated_at: new Date().toISOString() });
+                    if (error) {
+                        console.error(error);
+                        setCloudError(error.message || 'Falha ao salvar na nuvem.');
+                        setSyncStatus('Erro ao salvar');
+                    } else {
+                        setCloudError(null);
+                        setSyncStatus('Sincronizado');
+                    }
+                }, 900);
+                return () => { if (saveTimerRef.current) clearTimeout(saveTimerRef.current); };
+            }, [cloudReady, user.id, getDashboardSnapshot]);
+
+            const exportBackup = () => {
+                const payload = {
+                    app: 'Painel de Estudos - TRTs 2027',
+                    version: 1,
+                    exportedAt: new Date().toISOString(),
+                    data: getDashboardSnapshot()
+                };
+                const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `backup-painel-estudos-${new Date().toISOString().slice(0,10)}.json`;
+                a.click();
+                URL.revokeObjectURL(url);
+                setSyncStatus('Backup exportado');
+            };
+
+            const importBackup = (event) => {
+                const file = event.target.files?.[0];
+                event.target.value = '';
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = () => {
+                    try {
+                        const parsed = JSON.parse(reader.result);
+                        const data = parsed?.data || parsed;
+                        if (!data || typeof data !== 'object' || !data.trt6_edital_data_v2) throw new Error('Arquivo de backup inválido.');
+                        if (!window.confirm('Importar este backup substituirá os dados atuais deste painel. Deseja continuar?')) return;
+                        applyDashboardSnapshot(data);
+                        setSyncStatus('Backup importado; salvando...');
+                    } catch (e) {
+                        alert(e.message || 'Não foi possível importar o backup.');
+                    }
+                };
+                reader.readAsText(file);
+            };
+
+            const [timerState, setTimerState] = React.useState({ timeLeft: pomoConfig.focusTime * 60, isRunning: false, mode: 'focus', currentCycle: 1 });
+            const [stopwatchState, setStopwatchState] = React.useState({ time: 0, isRunning: false });
+
+            // Sons ambientes: preferências locais separadas dos dados de estudo/Supabase.
+            const SOUND_TRACKS = [
+                { id: 'rain', name: 'Chuva forte', description: 'Chuva constante · D W (CC BY)', icon: '🌧️', url: 'https://raw.githubusercontent.com/Muges/ambientsounds/master/heavy-rain.ogg' },
+                { id: 'rainlight', name: 'Chuva leve', description: 'Gravação em domínio público', icon: '🌦️', url: 'https://commons.wikimedia.org/wiki/Special:Redirect/file/Rain.ogg' },
+                { id: 'thunder', name: 'Trovões', description: 'Gravação: RHumphries (CC BY)', icon: '⛈️', url: 'https://raw.githubusercontent.com/Muges/ambientsounds/master/thunderstorm.ogg' },
+                { id: 'wind', name: 'Riacho', description: 'Gravação: mystiscool (CC BY)', icon: '💧', url: 'https://raw.githubusercontent.com/Muges/ambientsounds/master/stream.ogg' },
+                { id: 'forest', name: 'Floresta', description: 'Gravação: Corsica_S (CC BY)', icon: '🌲', url: 'https://raw.githubusercontent.com/Muges/ambientsounds/master/forest-rain.ogg' },
+                { id: 'waves', name: 'Ondas do mar', description: 'Gravação em CC0 / domínio público', icon: '🌊', url: 'https://commons.wikimedia.org/wiki/Special:Redirect/file/Ocean_Waves_on_a_Tropical_Beach.ogg' }
+            ];
+            const [soundActive, setSoundActive] = React.useState({}); // estado de reprodução não persiste após recarregar a página
+            const [soundVolumes, setSoundVolumes] = useLocalStorage('trt6_sound_volumes_v1', {});
+            const [masterVolume, setMasterVolume] = useLocalStorage('trt6_sound_master_v1', 35);
+            const [sleepMinutes, setSleepMinutes] = useLocalStorage('trt6_sound_sleep_minutes_v1', 0);
+            const [sleepSecondsLeft, setSleepSecondsLeft] = React.useState(0);
+            const [autoSoundWithPomodoro, setAutoSoundWithPomodoro] = useLocalStorage('trt6_sound_pomodoro_v1', false);
+            const [autoSoundTrack, setAutoSoundTrack] = useLocalStorage('trt6_sound_auto_track_v1', 'rain');
+            const [soundError, setSoundError] = React.useState('');
+            const audioRefs = React.useRef({});
+            const soundActiveRef = React.useRef(soundActive);
+            soundActiveRef.current = soundActive;
+
+            const toggleSound = (trackId) => {
+                const willPlay = !soundActiveRef.current[trackId];
+                const track = SOUND_TRACKS.find(t => t.id === trackId);
+                if (!track) return;
+                if (willPlay) {
+                    let audio = audioRefs.current[trackId];
+                    if (!audio) {
+                        audio = new Audio(track.url);
+                        audio.loop = true;
+                        audio.preload = 'none';
+                        audio.addEventListener('error', () => setSoundError(`Não foi possível carregar “${track.name}”. O provedor pode ter alterado o arquivo; tente outro som.`));
+                        audioRefs.current[trackId] = audio;
+                    }
+                    audio.volume = Math.max(0, Math.min(1, (Number(soundVolumes[trackId] ?? 70) / 100) * (Number(masterVolume) / 100)));
+                    setSoundError('');
+                    audio.play().then(() => setSoundActive(prev => ({ ...prev, [trackId]: true }))).catch(() => setSoundError(`O navegador não conseguiu iniciar “${track.name}”. Toque novamente para tentar.`));
+                } else {
+                    const audio = audioRefs.current[trackId];
+                    if (audio) { audio.pause(); audio.currentTime = 0; }
+                    setSoundActive(prev => ({ ...prev, [trackId]: false }));
+                }
+            };
+            const stopAllSounds = () => {
+                Object.values(audioRefs.current).forEach(audio => { audio.pause(); audio.currentTime = 0; });
+                setSoundActive({});
+                setSleepSecondsLeft(0);
+            };
+            React.useEffect(() => {
+                Object.entries(audioRefs.current).forEach(([id, audio]) => {
+                    audio.volume = Math.max(0, Math.min(1, (Number(soundVolumes[id] ?? 70) / 100) * (Number(masterVolume) / 100)));
+                });
+            }, [soundVolumes, masterVolume]);
+            React.useEffect(() => {
+                if (sleepSecondsLeft <= 0) return;
+                const id = setTimeout(() => setSleepSecondsLeft(prev => Math.max(0, prev - 1)), 1000);
+                return () => clearTimeout(id);
+            }, [sleepSecondsLeft]);
+            React.useEffect(() => {
+                if (sleepSecondsLeft === 0 && Object.values(soundActiveRef.current).some(Boolean)) {
+                    // Só encerra automaticamente quando um temporizador foi iniciado e chegou a zero.
+                    if (window.__studySoundTimerExpired) {
+                        window.__studySoundTimerExpired = false;
+                        stopAllSounds();
+                        showToast('Temporizador de sons concluído.', 'info');
+                    }
+                }
+            }, [sleepSecondsLeft]);
+            React.useEffect(() => {
+                if (!autoSoundWithPomodoro) return;
+                if (timerState.isRunning && timerState.mode === 'focus') {
+                    if (!soundActiveRef.current[autoSoundTrack]) toggleSound(autoSoundTrack);
+                } else if (soundActiveRef.current[autoSoundTrack]) {
+                    const audio = audioRefs.current[autoSoundTrack];
+                    if (audio) { audio.pause(); audio.currentTime = 0; }
+                    setSoundActive(prev => ({ ...prev, [autoSoundTrack]: false }));
+                }
+            }, [timerState.isRunning, timerState.mode, autoSoundWithPomodoro, autoSoundTrack]);
+            React.useEffect(() => () => Object.values(audioRefs.current).forEach(audio => audio.pause()), []);
+
+            const showToast = (message, type = 'info') => {
+                setToast({ message, type });
+                setTimeout(() => setToast(null), 4000);
+            };
+
+            const formatTime = (seconds) => {
+                const h = Math.floor(seconds / 3600);
+                const m = Math.floor((seconds % 3600) / 60);
+                const s = seconds % 60;
+                if (h > 0) return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+                return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+            };
+
+            const formatHours = (seconds) => {
+                const h = Math.floor(seconds / 3600);
+                const m = Math.floor((seconds % 3600) / 60);
+                return `${h}h ${m}m`;
+            };
+
+            React.useEffect(() => {
+                let interval = null;
+                if (timerState.isRunning && timerState.timeLeft > 0) {
+                    interval = setInterval(() => {
+                        setTimerState(prev => ({ ...prev, timeLeft: prev.timeLeft - 1 }));
+                    }, 1000);
+                } else if (timerState.isRunning && timerState.timeLeft === 0) {
+                    clearInterval(interval);
+                    
+                    setTimerState(prev => {
+                        if (prev.mode === 'focus') {
+                            addStudyEntry(pomoConfig.focusTime * 60, {
+                                disciplina: 'Estudo geral',
+                                type: 'pomodoro'
+                            });
+                            if (prev.currentCycle >= pomoConfig.cyclesForLongBreak) {
+                                showToast("Ciclo concluído! Hora de uma pausa longa.", "success");
+                                return { ...prev, mode: 'longBreak', timeLeft: pomoConfig.longBreak * 60, isRunning: false, currentCycle: 1 };
+                            } else {
+                                showToast("Pomodoro concluído! Hora de uma pausa curta.", "success");
+                                return { ...prev, mode: 'shortBreak', timeLeft: pomoConfig.shortBreak * 60, isRunning: false, currentCycle: prev.currentCycle + 1 };
+                            }
+                        } else {
+                            showToast("Pausa concluída! De volta aos estudos.", "info");
+                            return { ...prev, mode: 'focus', timeLeft: pomoConfig.focusTime * 60, isRunning: false };
+                        }
+                    });
+                }
+                return () => clearInterval(interval);
+            }, [timerState.isRunning, timerState.timeLeft, pomoConfig]);
+
+            React.useEffect(() => {
+                let interval = null;
+                if (stopwatchState.isRunning) {
+                    interval = setInterval(() => {
+                        setStopwatchState(prev => ({ ...prev, time: prev.time + 1 }));
+                    }, 1000);
+                }
+                return () => clearInterval(interval);
+            }, [stopwatchState.isRunning]);
+
+            const addStudyEntry = (seconds, { date = getLocalDateString(), disciplina = 'Estudo geral', notes = '', type = 'timer' } = {}) => {
+                const safeSeconds = Math.max(0, Math.floor(Number(seconds) || 0));
+                if (safeSeconds <= 0) return;
+                const entry = {
+                    id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+                    date,
+                    disciplina,
+                    seconds: safeSeconds,
+                    notes,
+                    type
+                };
+                setStudyEntries(prev => [entry, ...prev]);
+                setNetStudyTime(prev => prev + safeSeconds);
+            };
+
+            const updateStudyEntry = (id, updates) => {
+                setStudyEntries(prev => {
+                    const oldEntry = prev.find(e => e.id === id);
+                    if (!oldEntry) return prev;
+                    const newSeconds = Math.max(0, Math.floor(Number(updates.seconds) || 0));
+                    if (newSeconds <= 0) return prev;
+                    setNetStudyTime(total => Math.max(0, total - oldEntry.seconds + newSeconds));
+                    return prev.map(e => e.id === id ? { ...e, ...updates, seconds: newSeconds } : e);
+                });
+            };
+
+            const deleteStudyEntry = (id) => {
+                const entry = studyEntries.find(e => e.id === id);
+                if (!entry) return;
+                setStudyEntries(prev => prev.filter(e => e.id !== id));
+                setNetStudyTime(total => Math.max(0, total - entry.seconds));
+                showToast("Registro removido e tempo descontado do total.", "info");
+            };
+
+            const parseManualSeconds = () => {
+                const hours = Number(manualStudyForm.hours || 0);
+                const minutes = Number(manualStudyForm.minutes || 0);
+                if (!Number.isFinite(hours) || !Number.isFinite(minutes) || hours < 0 || minutes < 0 || !Number.isInteger(hours) || !Number.isInteger(minutes) || minutes > 59) return 0;
+                return hours * 3600 + minutes * 60;
+            };
+
+            const formatDateBR = (dateString) => {
+                if (!dateString) return '-';
+                const [y, m, d] = dateString.split('-');
+                return y && m && d ? `${d}/${m}/${y}` : dateString;
+            };
+
+            const formatDurationLong = (seconds) => {
+                const totalMinutes = Math.floor(seconds / 60);
+                const h = Math.floor(totalMinutes / 60);
+                const m = totalMinutes % 60;
+                if (h > 0 && m > 0) return `${h}h ${m}min`;
+                if (h > 0) return `${h}h`;
+                return `${m}min`;
+            };
+
+            const openStudyEdit = (entry) => {
+                const totalMinutes = Math.floor(entry.seconds / 60);
+                setEditingStudyId(entry.id);
+                setManualStudyForm({
+                    date: entry.date,
+                    disciplina: entry.disciplina,
+                    hours: Math.floor(totalMinutes / 60),
+                    minutes: totalMinutes % 60,
+                    notes: entry.notes || ''
+                });
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            };
+
+            const handleManualStudySubmit = (e) => {
+                e.preventDefault();
+                const seconds = parseManualSeconds();
+                if (!manualStudyForm.date) {
+                    showToast("Informe a data do estudo.", "error");
+                    return;
+                }
+                if (seconds <= 0) {
+                    showToast("Informe um tempo maior que zero.", "error");
+                    return;
+                }
+                if (editingStudyId) {
+                    updateStudyEntry(editingStudyId, {
+                        date: manualStudyForm.date,
+                        disciplina: manualStudyForm.disciplina,
+                        seconds,
+                        notes: manualStudyForm.notes.trim(),
+                        type: 'manual'
+                    });
+                    setEditingStudyId(null);
+                    showToast("Registro atualizado com sucesso!", "success");
+                } else {
+                    addStudyEntry(seconds, {
+                        date: manualStudyForm.date,
+                        disciplina: manualStudyForm.disciplina,
+                        notes: manualStudyForm.notes.trim(),
+                        type: 'manual'
+                    });
+                    showToast("Tempo estudado registrado com sucesso!", "success");
+                }
+                setManualStudyForm({
+                    date: getLocalDateString(),
+                    disciplina: getAllDisciplines()[0] || 'Estudo geral',
+                    hours: '',
+                    minutes: '',
+                    notes: ''
+                });
+            };
+
+            const cancelStudyEdit = () => {
+                setEditingStudyId(null);
+                setManualStudyForm({
+                    date: getLocalDateString(),
+                    disciplina: getAllDisciplines()[0] || 'Estudo geral',
+                    hours: '',
+                    minutes: '',
+                    notes: ''
+                });
+            };
+
+            const toggleProgress = (disciplina, index, type) => {
+                setProgress(prev => {
+                    const newProg = JSON.parse(JSON.stringify(prev));
+                    if (!newProg[disciplina]) newProg[disciplina] = {};
+                    if (!newProg[disciplina][index]) newProg[disciplina][index] = { teoria: false, revisao: false, questoes: false };
+                    
+                    newProg[disciplina][index][type] = !newProg[disciplina][index][type];
+                    return newProg;
+                });
+            };
+
+            const getDisciplinaStats = (nomeDisciplina, totalTopicos) => {
+                const discProgress = progress[nomeDisciplina] || {};
+                let completedItems = 0;
+                const validKeys = Object.keys(discProgress).filter(k => parseInt(k, 10) < totalTopicos);
+                
+                validKeys.forEach(k => {
+                    if (discProgress[k].teoria) completedItems++;
+                    if (discProgress[k].revisao) completedItems++;
+                    if (discProgress[k].questoes) completedItems++;
+                });
+
+                const totalItems = totalTopicos * 3;
+                let perc = totalItems === 0 ? 0 : Math.round((completedItems / totalItems) * 100);
+                perc = Math.min(100, perc); 
+                
+                return { completed: completedItems, total: totalItems, percentage: perc };
+            };
+
+            const getOverallStats = () => {
+                let realCompleted = 0;
+                let realTotal = 0;
+                let weightedTotalItems = 0;
+                let weightedTotalCompleted = 0;
+
+                editalData.forEach(cat => {
+                    // Aplicação de pesos: Específicos tem Peso 2, Gerais Peso 1
+                    const weight = cat.categoria === "Conhecimentos Específicos" ? 2 : 1;
+
+                    cat.disciplinas.forEach(disc => {
+                        const stats = getDisciplinaStats(disc.nome, disc.topicos.length);
+                        
+                        realTotal += stats.total;
+                        realCompleted += stats.completed;
+
+                        weightedTotalItems += stats.total * weight;
+                        weightedTotalCompleted += stats.completed * weight;
+                    });
+                });
+
+                let percPonderada = weightedTotalItems === 0 ? 0 : Math.round((weightedTotalCompleted / weightedTotalItems) * 100);
+                
+                return { 
+                    percentage: Math.min(100, percPonderada), 
+                    completed: realCompleted, 
+                    total: realTotal 
+                };
+            };
+
+            const deepCopyEdital = (data) => JSON.parse(JSON.stringify(data));
+
+            const handleEditTopic = (catIndex, discIndex, topicIndex, newValue) => {
+                setEditalData(prev => {
+                    const newData = deepCopyEdital(prev);
+                    newData[catIndex].disciplinas[discIndex].topicos[topicIndex] = newValue;
+                    return newData;
+                });
+            };
+
+            const handleDeleteTopic = (catIndex, discIndex, topicIndex) => {
+                setEditalData(prev => {
+                    const newData = deepCopyEdital(prev);
+                    newData[catIndex].disciplinas[discIndex].topicos.splice(topicIndex, 1);
+                    return newData;
+                });
+                showToast("Tópico removido", "info");
+            };
+
+            const handleAddTopic = (catIndex, discIndex) => {
+                setEditalData(prev => {
+                    const newData = deepCopyEdital(prev);
+                    newData[catIndex].disciplinas[discIndex].topicos.push("Novo Tópico");
+                    return newData;
+                });
+            };
+
+            const renderDashboard = () => {
+                const stats = getOverallStats();
+                
+                // Calculos de Desempenho Global
+                let totalQ = 0;
+                let totalHit = 0;
+                Object.values(performanceData).forEach(d => { totalQ += d.total; totalHit += d.acertos; });
+                const globalAcc = totalQ === 0 ? 0 : Math.round((totalHit/totalQ)*100);
+
+                // Cálculo de Ritmo de Estudos e Projeção
+                const daysElapsed = Math.max(1, Math.floor((new Date() - new Date(startDate)) / (1000 * 60 * 60 * 24)));
+                const completedTopics = stats.completed / 3; // 3 checks = 1 tópico
+                const totalTopics = stats.total / 3;
+                const remainingTopics = totalTopics - completedTopics;
+                const pace = completedTopics / daysElapsed; // tópicos por dia
+
+                let projectionText = "N/A";
+                let projectionDate = null;
+                if (pace > 0 && remainingTopics > 0) {
+                    const daysRemaining = remainingTopics / pace;
+                    projectionDate = new Date();
+                    projectionDate.setDate(projectionDate.getDate() + daysRemaining);
+                    projectionText = projectionDate.toLocaleDateString('pt-BR');
+                } else if (remainingTopics <= 0) {
+                    projectionText = "Edital Concluído!";
+                } else {
+                    projectionText = "Inicie para projetar";
+                }
+
+                return (
+                    <div className="space-y-6 animate-fade-in">
+                        {/* Linha 1: Evolução + Resumo Tempo */}
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            {/* Card Progresso */}
+                            <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 col-span-1 md:col-span-2">
+                                <div className="flex items-center justify-between mb-4">
+                                    <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
+                                        <Icons.Award /> Evolução Global <span className="text-xs font-normal text-slate-400 bg-slate-100 px-2 py-1 rounded ml-2">(Ponderada)</span>
+                                    </h2>
+                                    <span className="text-3xl font-black text-indigo-600">{stats.percentage}%</span>
+                                </div>
+                                <div className="w-full bg-slate-100 h-4 rounded-full overflow-hidden">
+                                    <div className="bg-indigo-600 h-full transition-all duration-500 ease-out" style={{ width: `${stats.percentage}%` }}></div>
+                                </div>
+                                <p className="text-sm text-slate-500 mt-3 flex justify-between">
+                                    <span>{stats.completed} de {stats.total} tarefas concluídas</span>
+                                    <span className="text-xs text-slate-400 border border-slate-200 px-2 py-0.5 rounded">Específicos Peso 2</span>
+                                </p>
+                            </div>
+                            
+                            {/* Card Resumo Tempo/Questões */}
+                            <div className="bg-gradient-to-br from-indigo-500 to-purple-600 p-6 rounded-xl shadow-sm text-white flex flex-col justify-center">
+                                <p className="text-indigo-100 text-sm font-medium mb-1">Tempo de Estudo Líquido</p>
+                                <h3 className="text-3xl font-black mb-4">{formatHours(netStudyTime)}</h3>
+                                
+                                <p className="text-indigo-100 text-sm font-medium mb-1">Precisão em Questões</p>
+                                <div className="flex items-end gap-2">
+                                    <h3 className="text-2xl font-bold">{globalAcc}%</h3>
+                                    <span className="text-indigo-200 text-xs mb-1">({totalHit}/{totalQ})</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Linha 2: Ritmo e Projeção */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 flex items-center gap-4">
+                                <div className="p-4 bg-emerald-50 text-emerald-600 rounded-xl">
+                                    <Icons.TrendingUp />
+                                </div>
+                                <div>
+                                    <p className="text-sm font-bold text-slate-500 uppercase">Ritmo de Estudos</p>
+                                    <h3 className="text-2xl font-black text-slate-800">{pace.toFixed(1)} <span className="text-sm font-medium text-slate-500">tópicos/dia</span></h3>
+                                </div>
+                            </div>
+                            
+                            <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 flex items-center gap-4">
+                                <div className="p-4 bg-blue-50 text-blue-600 rounded-xl">
+                                    <Icons.CalendarClock />
+                                </div>
+                                <div>
+                                    <p className="text-sm font-bold text-slate-500 uppercase">Projeção p/ Conclusão (100%)</p>
+                                    <h3 className="text-xl font-black text-slate-800">{projectionText}</h3>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Progresso por Disciplina */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
+                            {editalData.map((cat, i) => (
+                                <div key={i} className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                                    <h3 className="text-lg font-bold text-slate-700 mb-4 pb-2 border-b flex justify-between">
+                                        {cat.categoria} 
+                                        <span className="text-xs font-normal text-slate-400 bg-slate-100 px-2 py-1 rounded">Peso {cat.categoria === "Conhecimentos Específicos" ? '2' : '1'}</span>
+                                    </h3>
+                                    <div className="space-y-5">
+                                        {cat.disciplinas.map((disc, j) => {
+                                            const discStats = getDisciplinaStats(disc.nome, disc.topicos.length);
+                                            return (
+                                                <div key={j}>
+                                                    <div className="flex justify-between text-sm mb-1">
+                                                        <span className="font-medium text-slate-600 truncate mr-2" title={disc.nome}>{disc.nome}</span>
+                                                        <span className="text-slate-500 whitespace-nowrap">{discStats.percentage}%</span>
+                                                    </div>
+                                                    <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                                                        <div 
+                                                            className={`h-full transition-all ${discStats.percentage >= 80 ? 'bg-emerald-500' : discStats.percentage >= 40 ? 'bg-amber-400' : 'bg-blue-400'}`} 
+                                                            style={{ width: `${discStats.percentage}%` }}
+                                                        ></div>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                );
+            };
+
+            const renderEdital = () => {
+                return (
+                    <div className="space-y-6 animate-fade-in">
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between bg-white p-4 rounded-xl border border-slate-200 shadow-sm gap-4">
+                            <div>
+                                <h2 className="text-xl font-bold text-slate-800">Controle do Edital</h2>
+                                <p className="text-sm text-slate-500">Acompanhe seu progresso ou adapte o edital às suas necessidades.</p>
+                            </div>
+                            <button 
+                                onClick={() => setIsEditingEdital(!isEditingEdital)}
+                                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${isEditingEdital ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}`}
+                            >
+                                <Icons.Edit3 />
+                                {isEditingEdital ? "Concluir Edição" : "Editar Tópicos"}
+                            </button>
+                        </div>
+
+                        <div className="space-y-6">
+                            {editalData.map((cat, i) => (
+                                <div key={i} className="space-y-4">
+                                    <h3 className="text-lg font-bold text-slate-700 ml-1 flex items-center gap-2">
+                                        {cat.categoria}
+                                        <span className="text-xs font-normal text-slate-500 bg-slate-200 px-2 py-0.5 rounded-full">Peso {cat.categoria === "Conhecimentos Específicos" ? '2' : '1'}</span>
+                                    </h3>
+                                    {cat.disciplinas.map((disc, j) => {
+                                        const discStats = getDisciplinaStats(disc.nome, disc.topicos.length);
+                                        return (
+                                            <details key={j} className="bg-white rounded-xl shadow-sm border border-slate-200 group overflow-hidden" open={isEditingEdital}>
+                                                <summary className="flex items-center justify-between p-4 sm:p-5 cursor-pointer bg-white hover:bg-slate-50 list-none">
+                                                    <div className="flex items-center gap-3 w-full pr-4">
+                                                        <div className="p-2 bg-indigo-50 text-indigo-600 rounded-lg hidden sm:block">
+                                                            <Icons.BookOpen />
+                                                        </div>
+                                                        <div className="flex-1">
+                                                            <h4 className="font-semibold text-slate-700 text-sm sm:text-base">{disc.nome}</h4>
+                                                            {!isEditingEdital && (
+                                                                <div className="flex items-center gap-2 mt-1">
+                                                                    <div className="w-full max-w-[150px] bg-slate-200 h-1.5 rounded-full overflow-hidden">
+                                                                        <div className="bg-indigo-500 h-full" style={{ width: `${discStats.percentage}%` }}></div>
+                                                                    </div>
+                                                                    <span className="text-xs text-slate-500 font-medium">{discStats.percentage}%</span>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                    <div className="text-slate-400 group-open:rotate-180 transition-transform duration-200">
+                                                        <Icons.ChevronDown />
+                                                    </div>
+                                                </summary>
+                                                
+                                                <div className="px-3 sm:px-5 pb-5 pt-2 border-t border-slate-100 bg-slate-50/50">
+                                                    {!isEditingEdital && (
+                                                        <div className="hidden md:flex justify-end gap-6 px-4 mb-2 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                                                            <div className="w-16 text-center">Teoria</div>
+                                                            <div className="w-16 text-center">Revisão</div>
+                                                            <div className="w-16 text-center">Questões</div>
+                                                        </div>
+                                                    )}
+
+                                                    <div className="space-y-3">
+                                                        {disc.topicos.map((topico, k) => {
+                                                            const topicState = progress[disc.nome]?.[k] || { teoria: false, revisao: false, questoes: false };
+                                                            const isAllDone = topicState.teoria && topicState.revisao && topicState.questoes;
+                                                            
+                                                            return (
+                                                                <div key={k} className={`flex flex-col md:flex-row md:items-center justify-between p-3 rounded-lg border transition-colors ${isAllDone && !isEditingEdital ? 'bg-emerald-50/30 border-emerald-100' : 'bg-white border-slate-200'}`}>
+                                                                    {isEditingEdital ? (
+                                                                        <div className="flex-1 mr-2 sm:mr-4 flex items-center">
+                                                                            <span className="text-slate-400 mr-2 text-sm">{k + 1}.</span>
+                                                                            <input 
+                                                                                type="text" 
+                                                                                value={topico}
+                                                                                onChange={(e) => handleEditTopic(i, j, k, e.target.value)}
+                                                                                className="w-full text-sm p-2 border border-slate-300 rounded focus:border-indigo-500 focus:outline-none bg-slate-50"
+                                                                            />
+                                                                            <button onClick={() => handleDeleteTopic(i, j, k)} className="text-red-400 hover:text-red-600 p-2 ml-2 flex-shrink-0" title="Remover tópico">
+                                                                                <Icons.Trash />
+                                                                            </button>
+                                                                        </div>
+                                                                    ) : (
+                                                                        <>
+                                                                            <span className={`text-sm md:pr-4 mb-3 md:mb-0 flex-1 ${isAllDone ? 'text-slate-400 line-through' : 'text-slate-700'}`}>
+                                                                                <span className="text-slate-400 mr-2">{k + 1}.</span> {topico}
+                                                                            </span>
+                                                                            <div className="flex items-center justify-around sm:justify-end gap-4 md:gap-6 w-full sm:w-auto">
+                                                                                <label className="flex flex-col items-center gap-1 cursor-pointer group/chk">
+                                                                                    <span className="text-[10px] uppercase font-bold text-slate-400 md:hidden group-hover/chk:text-blue-500">Teoria</span>
+                                                                                    <input type="checkbox" checked={topicState.teoria} onChange={() => toggleProgress(disc.nome, k, 'teoria')} className="w-5 h-5 sm:w-6 sm:h-6 rounded border-slate-300 text-blue-500 focus:ring-blue-500 check-teoria cursor-pointer" />
+                                                                                </label>
+                                                                                <label className="flex flex-col items-center gap-1 cursor-pointer group/chk">
+                                                                                    <span className="text-[10px] uppercase font-bold text-slate-400 md:hidden group-hover/chk:text-amber-500">Revisão</span>
+                                                                                    <input type="checkbox" checked={topicState.revisao} onChange={() => toggleProgress(disc.nome, k, 'revisao')} className="w-5 h-5 sm:w-6 sm:h-6 rounded border-slate-300 text-amber-500 focus:ring-amber-500 check-revisao cursor-pointer" />
+                                                                                </label>
+                                                                                <label className="flex flex-col items-center gap-1 cursor-pointer group/chk">
+                                                                                    <span className="text-[10px] uppercase font-bold text-slate-400 md:hidden group-hover/chk:text-emerald-500">Questões</span>
+                                                                                    <input type="checkbox" checked={topicState.questoes} onChange={() => toggleProgress(disc.nome, k, 'questoes')} className="w-5 h-5 sm:w-6 sm:h-6 rounded border-slate-300 text-emerald-500 focus:ring-emerald-500 check-questoes cursor-pointer" />
+                                                                                </label>
+                                                                            </div>
+                                                                        </>
+                                                                    )}
+                                                                </div>
+                                                            );
+                                                        })}
+                                                        {isEditingEdital && (
+                                                            <button 
+                                                                onClick={() => handleAddTopic(i, j)}
+                                                                className="w-full flex items-center justify-center gap-2 p-3 text-sm font-medium text-indigo-600 bg-indigo-50 border border-indigo-100 rounded-lg hover:bg-indigo-100 transition-colors mt-2"
+                                                            >
+                                                                <Icons.Plus /> Adicionar Tópico
+                                                            </button>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </details>
+                                        );
+                                    })}
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                );
+            };
+
+            const renderCronograma = () => {
+                const days = ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado', 'Domingo'];
+                
+                const generateSmartCycle = () => {
+                    let pendingList = [];
+                    
+                    // 1. Identificar matérias pendentes e aplicar pesos
+                    editalData.forEach(cat => {
+                        const weight = cat.categoria === "Conhecimentos Específicos" ? 2 : 1;
+                        cat.disciplinas.forEach(disc => {
+                            const stats = getDisciplinaStats(disc.nome, disc.topicos.length);
+                            const pendingItems = stats.total - stats.completed; // (teoria, revisao, questoes faltantes)
+                            
+                            if (pendingItems > 0) {
+                                pendingList.push({
+                                    nome: disc.nome,
+                                    pending: pendingItems,
+                                    weight: weight,
+                                    score: pendingItems * weight // Fator de priorização principal
+                                });
+                            }
+                        });
+                    });
+
+                    // 2. Ordenar pelas de maior prioridade (Mais pontos pendentes * Peso)
+                    pendingList.sort((a, b) => b.score - a.score);
+
+                    if (pendingList.length === 0) {
+                        showToast("Parabéns! Edital concluído. Modo de revisão geral ativado.", "success");
+                        let finishedSchedule = {};
+                        days.forEach(d => finishedSchedule[d] = "Revisão Geral e Resolução de Questões");
+                        setSchedule(finishedSchedule);
+                        return;
+                    }
+
+                    // 3. Distribuir na semana (Seg a Sáb)
+                    const daysToFill = ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
+                    let newSchedule = { ...schedule, Domingo: "Descanso / Leitura leve (Redação Oficial / Súmulas)" };
+
+                    let slots = [];
+                    let i = 0;
+                    
+                    // Precisamos de 12 espaços (2 matérias por dia x 6 dias)
+                    while (slots.length < 12) {
+                        slots.push(pendingList[i % pendingList.length].nome);
+                        i++;
+                    }
+
+                    // 4. Preencher o state
+                    daysToFill.forEach((day, idx) => {
+                        const disc1 = slots[idx * 2];
+                        const disc2 = slots[idx * 2 + 1];
+                        
+                        let text = disc1 === disc2 ? `${disc1} (Foco Duplo)` : `${disc1} e ${disc2}`;
+                        newSchedule[day] = text + "\n• Foco nos próximos tópicos pendentes do edital.";
+                    });
+
+                    setSchedule(newSchedule);
+                    showToast("Ciclo Inteligente gerado com sucesso!", "success");
+                };
+
+                return (
+                    <div className="bg-white p-4 sm:p-6 rounded-xl shadow-sm border border-slate-200 animate-fade-in">
+                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+                            <div>
+                                <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
+                                    <Icons.Calendar /> Planejamento Semanal
+                                </h2>
+                                <p className="text-sm text-slate-500">Organize metas diárias ou deixe o sistema planejar por você.</p>
+                            </div>
+                            <button onClick={generateSmartCycle} className="flex items-center gap-2 text-sm px-4 py-2 bg-indigo-600 text-white font-medium rounded-lg hover:bg-indigo-700 transition-colors shadow-sm whitespace-nowrap">
+                                <Icons.Sparkles /> Gerar Ciclo Inteligente
+                            </button>
+                        </div>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            {days.map(day => (
+                                <div key={day} className={`p-4 rounded-xl border ${day === 'Domingo' || day === 'Sábado' ? 'bg-slate-50 border-slate-200' : 'bg-indigo-50/30 border-indigo-100'}`}>
+                                    <h3 className="font-semibold text-slate-700 mb-2">{day}</h3>
+                                    <textarea 
+                                        className="w-full h-24 p-3 text-sm bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none leading-relaxed"
+                                        placeholder={`Metas para ${day}...`}
+                                        value={schedule[day]}
+                                        onChange={(e) => setSchedule(prev => ({ ...prev, [day]: e.target.value }))}
+                                    ></textarea>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                );
+            };
+
+            const renderSounds = () => (
+                <div className="space-y-6 animate-fade-in">
+                    <div className="bg-gradient-to-r from-indigo-900 to-slate-800 text-white rounded-2xl p-6 sm:p-8">
+                        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                            <div><p className="text-indigo-200 text-sm font-semibold">AMBIENTE DE CONCENTRAÇÃO</p><h2 className="text-2xl sm:text-3xl font-black mt-1">Sons para estudar</h2><p className="text-slate-300 mt-2 text-sm">Combine sons e ajuste cada camada ao seu gosto.</p></div>
+                            <button onClick={stopAllSounds} className="px-4 py-3 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 font-bold text-sm">■ Parar todos</button>
+                        </div>
+                        <div className="mt-6 bg-white/10 rounded-xl p-4"><div className="flex items-center justify-between gap-3 mb-2"><label htmlFor="master-volume" className="text-sm font-semibold">Volume geral</label><span className="text-sm tabular-nums">{masterVolume}%</span></div><input id="master-volume" type="range" min="0" max="100" value={masterVolume} onChange={e => setMasterVolume(Number(e.target.value))} className="w-full accent-indigo-300" /></div>
+                    </div>
+                    {soundError && <div className="p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-sm">{soundError}</div>}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+                        {SOUND_TRACKS.map(track => {
+                            const isOn = !!soundActive[track.id];
+                            return <div key={track.id} className={`bg-white p-5 rounded-2xl border shadow-sm transition-all ${isOn ? 'border-indigo-300 ring-2 ring-indigo-50' : 'border-slate-200'}`}>
+                                <div className="flex items-start justify-between gap-3"><div className="flex items-center gap-3"><div className="text-3xl bg-slate-50 rounded-xl p-3">{track.icon}</div><div><h3 className="font-bold text-slate-800">{track.name}</h3><p className="text-xs text-slate-500 mt-1">{track.description}</p></div></div><span className={`w-2.5 h-2.5 rounded-full mt-2 ${isOn ? 'bg-emerald-500' : 'bg-slate-300'}`}></span></div>
+                                <button onClick={() => toggleSound(track.id)} className={`w-full mt-5 py-2.5 rounded-xl text-sm font-bold transition-colors ${isOn ? 'bg-indigo-100 text-indigo-700 hover:bg-indigo-200' : 'bg-indigo-600 text-white hover:bg-indigo-700'}`}>{isOn ? 'Ⅱ Pausar som' : '▶ Reproduzir'}</button>
+                                <div className="mt-4 flex items-center gap-3"><span className="text-xs text-slate-500 w-14">Volume</span><input aria-label={`Volume ${track.name}`} type="range" min="0" max="100" value={soundVolumes[track.id] ?? 70} onChange={e => setSoundVolumes(prev => ({ ...prev, [track.id]: Number(e.target.value) }))} className="flex-1 accent-indigo-600"/><span className="text-xs text-slate-500 w-8 text-right">{soundVolumes[track.id] ?? 70}%</span></div>
+                            </div>;
+                        })}
+                    </div>
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm"><h3 className="font-bold text-slate-800">⏲ Temporizador dos sons</h3><p className="text-sm text-slate-500 mt-1 mb-4">Desliga automaticamente todos os sons após o período escolhido.</p><div className="flex flex-wrap gap-2">{[0,15,30,45,60,90,120].map(min => <button key={min} onClick={() => { setSleepMinutes(min); setSleepSecondsLeft(min * 60); window.__studySoundTimerExpired = min > 0; if (min === 0) window.__studySoundTimerExpired = false; }} className={`px-3 py-2 rounded-lg text-sm font-semibold ${sleepMinutes === min ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>{min === 0 ? 'Desativado' : `${min} min`}</button>)}</div>{sleepSecondsLeft > 0 && <p className="mt-4 text-sm font-semibold text-indigo-700">Tempo restante: {formatTime(sleepSecondsLeft)}</p>}</div>
+                        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm"><h3 className="font-bold text-slate-800">🍅 Integração com Pomodoro</h3><p className="text-sm text-slate-500 mt-1 mb-4">Opcionalmente, inicia um som quando o foco começa e pausa esse som durante as pausas ou quando você pausa o timer.</p><label className="flex items-center gap-3 text-sm font-semibold text-slate-700"><input type="checkbox" checked={autoSoundWithPomodoro} onChange={e => setAutoSoundWithPomodoro(e.target.checked)} className="w-4 h-4 accent-indigo-600"/> Controlar som junto ao Pomodoro</label><label className="block text-xs font-bold uppercase text-slate-500 mt-4 mb-2">Som automático</label><select value={autoSoundTrack} onChange={e => setAutoSoundTrack(e.target.value)} className="w-full p-3 rounded-xl border border-slate-200 bg-white text-sm">{SOUND_TRACKS.map(t => <option key={t.id} value={t.id}>{t.icon} {t.name}</option>)}</select></div>
+                    </div>
+                    <p className="text-xs text-slate-400">Os áudios são carregados de serviços externos e exigem conexão com a internet. As faixas de chuva forte, floresta, riacho e temporal vêm do projeto AmbientSounds; os autores e licenças aparecem em cada cartão. Consulte também https://github.com/Muges/ambientsounds. Rain.ogg é domínio público; Ocean Waves on a Tropical Beach é CC0. A primeira reprodução precisa ser iniciada por você.</p>
+                </div>
+            );
+
+            const renderTimer = () => {
+                const toggleTimer = () => setTimerState(prev => ({ ...prev, isRunning: !prev.isRunning }));
+                const resetTimer = () => setTimerState({ 
+                    timeLeft: timerState.mode === 'focus' ? pomoConfig.focusTime * 60 : timerState.mode === 'shortBreak' ? pomoConfig.shortBreak * 60 : pomoConfig.longBreak * 60, 
+                    isRunning: false, mode: timerState.mode, currentCycle: timerState.currentCycle 
+                });
+                const changeMode = (mode) => setTimerState(prev => ({
+                    ...prev, mode, isRunning: false,
+                    timeLeft: mode === 'focus' ? pomoConfig.focusTime * 60 : mode === 'shortBreak' ? pomoConfig.shortBreak * 60 : pomoConfig.longBreak * 60
+                }));
+
+                const toggleStopwatch = () => setStopwatchState(prev => ({ ...prev, isRunning: !prev.isRunning }));
+                const resetStopwatch = () => setStopwatchState({ time: 0, isRunning: false });
+                const saveStopwatchTime = () => {
+                    if(stopwatchState.time === 0) return;
+                    addStudyEntry(stopwatchState.time, {
+                        disciplina: 'Estudo geral',
+                        type: 'stopwatch'
+                    });
+                    resetStopwatch();
+                    showToast("Tempo líquido salvo com sucesso!", "success");
+                };
+
+                return (
+                    <div className="space-y-6 animate-fade-in">
+                        {/* Seletor de Tipo de Timer */}
+                        <div className="flex justify-center mb-6">
+                            <div className="bg-slate-200 p-1 rounded-lg inline-flex">
+                                <button onClick={() => setTimerType('pomodoro')} className={`px-6 py-2 rounded-md text-sm font-medium transition-all ${timerType === 'pomodoro' ? 'bg-white shadow text-indigo-700' : 'text-slate-600 hover:text-slate-800'}`}>Pomodoro</button>
+                                <button onClick={() => setTimerType('stopwatch')} className={`px-6 py-2 rounded-md text-sm font-medium transition-all ${timerType === 'stopwatch' ? 'bg-white shadow text-indigo-700' : 'text-slate-600 hover:text-slate-800'}`}>Cronômetro</button>
+                            </div>
+                        </div>
+
+                        {timerType === 'pomodoro' ? (
+                            <div className="bg-white p-6 sm:p-10 rounded-2xl shadow-sm border border-slate-200 max-w-lg mx-auto text-center relative overflow-hidden">
+                                {/* Modos do Pomodoro */}
+                                <div className="flex justify-center gap-2 sm:gap-4 mb-8">
+                                    <button onClick={() => changeMode('focus')} className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-full text-xs sm:text-sm font-bold transition-colors ${timerState.mode === 'focus' ? 'bg-indigo-100 text-indigo-700' : 'text-slate-500 hover:bg-slate-100'}`}>Foco</button>
+                                    <button onClick={() => changeMode('shortBreak')} className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-full text-xs sm:text-sm font-bold transition-colors ${timerState.mode === 'shortBreak' ? 'bg-emerald-100 text-emerald-700' : 'text-slate-500 hover:bg-slate-100'}`}>Pausa Curta</button>
+                                    <button onClick={() => changeMode('longBreak')} className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-full text-xs sm:text-sm font-bold transition-colors ${timerState.mode === 'longBreak' ? 'bg-blue-100 text-blue-700' : 'text-slate-500 hover:bg-slate-100'}`}>Pausa Longa</button>
+                                </div>
+                                
+                                <div className="text-7xl sm:text-8xl font-black text-slate-800 mb-8 tabular-nums tracking-tighter">
+                                    {formatTime(timerState.timeLeft)}
+                                </div>
+
+                                <div className="flex items-center justify-center gap-4">
+                                    <button onClick={toggleTimer} className={`flex items-center justify-center w-16 h-16 sm:w-20 sm:h-20 rounded-full text-white shadow-lg transition-transform hover:scale-105 active:scale-95 ${timerState.isRunning ? 'bg-amber-500 hover:bg-amber-600' : 'bg-indigo-600 hover:bg-indigo-700'}`}>
+                                        {timerState.isRunning ? <Icons.Pause /> : <Icons.Play />}
+                                    </button>
+                                    <button onClick={resetTimer} className="flex items-center justify-center w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors">
+                                        <Icons.RefreshCcw />
+                                    </button>
+                                </div>
+                                
+                                <p className="mt-8 text-sm text-slate-500 font-medium">Ciclo atual: {timerState.currentCycle} / {pomoConfig.cyclesForLongBreak}</p>
+                            </div>
+                        ) : (
+                            <div className="bg-white p-6 sm:p-10 rounded-2xl shadow-sm border border-slate-200 max-w-lg mx-auto text-center">
+                                <h3 className="text-lg font-bold text-slate-600 mb-6 uppercase tracking-widest">Cronômetro Livre</h3>
+                                <div className="text-7xl sm:text-8xl font-black text-slate-800 mb-8 tabular-nums tracking-tighter">
+                                    {formatTime(stopwatchState.time)}
+                                </div>
+                                <div className="flex items-center justify-center gap-4">
+                                    <button onClick={toggleStopwatch} className={`flex items-center justify-center w-16 h-16 sm:w-20 sm:h-20 rounded-full text-white shadow-lg transition-transform hover:scale-105 active:scale-95 ${stopwatchState.isRunning ? 'bg-amber-500 hover:bg-amber-600' : 'bg-indigo-600 hover:bg-indigo-700'}`}>
+                                        {stopwatchState.isRunning ? <Icons.Pause /> : <Icons.Play />}
+                                    </button>
+                                    <button onClick={resetStopwatch} className="flex items-center justify-center w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors" title="Zerar">
+                                        <Icons.Square />
+                                    </button>
+                                </div>
+                                <button onClick={saveStopwatchTime} disabled={stopwatchState.time === 0} className="mt-8 px-6 py-3 bg-emerald-100 text-emerald-700 font-bold rounded-lg hover:bg-emerald-200 transition-colors disabled:opacity-50 flex items-center justify-center gap-2 mx-auto">
+                                    <Icons.Save /> Salvar Tempo Líquido
+                                </button>
+                            </div>
+                        )}
+
+                        {/* Registro manual + histórico */}
+                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-8">
+                            <div className="lg:col-span-1 bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                                <div className="flex items-center justify-between mb-5">
+                                    <div>
+                                        <h3 className="text-lg font-bold text-slate-800">{editingStudyId ? 'Editar estudo' : 'Adicionar estudo manual'}</h3>
+                                        <p className="text-sm text-slate-500 mt-1">Para quando você estudou e esqueceu de ligar o timer.</p>
+                                    </div>
+                                    <div className="p-2 bg-indigo-50 text-indigo-600 rounded-lg"><Icons.Plus /></div>
+                                </div>
+
+                                <form onSubmit={handleManualStudySubmit} className="space-y-4">
+                                    <div>
+                                        <label className="block text-xs font-bold text-slate-500 mb-1 uppercase">Data</label>
+                                        <input type="date" required value={manualStudyForm.date}
+                                            onChange={e => setManualStudyForm({...manualStudyForm, date: e.target.value})}
+                                            className="w-full p-3 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500" />
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-xs font-bold text-slate-500 mb-1 uppercase">Disciplina</label>
+                                        <select value={manualStudyForm.disciplina}
+                                            onChange={e => setManualStudyForm({...manualStudyForm, disciplina: e.target.value})}
+                                            className="w-full p-3 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500 bg-white">
+                                            {getAllDisciplines().map(d => <option key={d} value={d}>{d}</option>)}
+                                            <option value="Estudo geral">Estudo geral</option>
+                                        </select>
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-xs font-bold text-slate-500 mb-1 uppercase">Tempo estudado</label>
+                                        <div className="grid grid-cols-2 gap-3">
+                                            <div>
+                                                <input type="number" min="0" step="1" value={manualStudyForm.hours}
+                                                    onChange={e => setManualStudyForm({...manualStudyForm, hours: e.target.value})}
+                                                    className="w-full p-3 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Horas" />
+                                                <span className="text-[11px] text-slate-400">horas</span>
+                                            </div>
+                                            <div>
+                                                <input type="number" min="0" max="59" step="1" value={manualStudyForm.minutes}
+                                                    onChange={e => setManualStudyForm({...manualStudyForm, minutes: e.target.value})}
+                                                    className="w-full p-3 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Minutos" />
+                                                <span className="text-[11px] text-slate-400">minutos (0–59)</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-xs font-bold text-slate-500 mb-1 uppercase">Observação <span className="font-normal normal-case">(opcional)</span></label>
+                                        <textarea value={manualStudyForm.notes}
+                                            onChange={e => setManualStudyForm({...manualStudyForm, notes: e.target.value})}
+                                            rows="3" maxLength="300"
+                                            className="w-full p-3 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
+                                            placeholder="Ex.: revisão de controle de constitucionalidade..." />
+                                    </div>
+
+                                    <div className="flex gap-2">
+                                        <button type="submit" className="flex-1 px-5 py-3 bg-indigo-600 text-white font-bold rounded-lg hover:bg-indigo-700 transition-colors">
+                                            {editingStudyId ? 'Salvar alterações' : 'Registrar estudo'}
+                                        </button>
+                                        {editingStudyId && (
+                                            <button type="button" onClick={cancelStudyEdit} className="px-4 py-3 bg-slate-100 text-slate-600 font-bold rounded-lg hover:bg-slate-200">
+                                                Cancelar
+                                            </button>
+                                        )}
+                                    </div>
+                                </form>
+                            </div>
+
+                            <div className="lg:col-span-2 bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                                <div className="flex items-center justify-between mb-5">
+                                    <div>
+                                        <h3 className="text-lg font-bold text-slate-800">Histórico de estudos</h3>
+                                        <p className="text-sm text-slate-500 mt-1">Sessões registradas pelo timer e adicionadas manualmente.</p>
+                                    </div>
+                                    <span className="text-xs font-bold bg-slate-100 text-slate-500 px-3 py-1 rounded-full">{studyEntries.length} registro{studyEntries.length === 1 ? '' : 's'}</span>
+                                </div>
+
+                                {studyEntries.length > 0 ? (
+                                    <div className="space-y-3 max-h-[520px] overflow-y-auto pr-1">
+                                        {studyEntries.slice().sort((a,b) => (b.date || '').localeCompare(a.date || '')).map(entry => (
+                                            <div key={entry.id} className="p-4 rounded-xl border border-slate-200 bg-slate-50/60">
+                                                <div className="flex items-start justify-between gap-3">
+                                                    <div className="min-w-0">
+                                                        <div className="flex flex-wrap items-center gap-2">
+                                                            <span className="font-bold text-slate-800 truncate">{entry.disciplina}</span>
+                                                            <span className={`text-[10px] font-bold uppercase px-2 py-1 rounded-full ${entry.type === 'manual' ? 'bg-amber-100 text-amber-700' : entry.type === 'pomodoro' ? 'bg-indigo-100 text-indigo-700' : 'bg-emerald-100 text-emerald-700'}`}>
+                                                                {entry.type === 'manual' ? 'Manual' : entry.type === 'pomodoro' ? 'Pomodoro' : 'Cronômetro'}
+                                                            </span>
+                                                        </div>
+                                                        <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2 text-xs text-slate-500">
+                                                            <span>📅 {formatDateBR(entry.date)}</span>
+                                                            <span>⏱️ <strong className="text-slate-700">{formatDurationLong(entry.seconds)}</strong></span>
+                                                        </div>
+                                                        {entry.notes && <p className="text-xs text-slate-500 mt-2 break-words">{entry.notes}</p>}
+                                                    </div>
+                                                    <div className="flex items-center gap-1 flex-shrink-0">
+                                                        <button onClick={() => openStudyEdit(entry)} className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg" title="Editar">
+                                                            <Icons.Edit3 />
+                                                        </button>
+                                                        <button onClick={() => deleteStudyEntry(entry.id)} className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg" title="Excluir">
+                                                            <Icons.Trash />
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <div className="text-center p-10 bg-slate-50 rounded-xl border border-dashed border-slate-300">
+                                        <p className="text-slate-500">Nenhum estudo registrado ainda.</p>
+                                        <p className="text-xs text-slate-400 mt-1">Os próximos ciclos salvos aparecerão aqui.</p>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                );
+            };
+
+            const renderPerformance = () => {
+                const handleAddPerf = (e) => {
+                    e.preventDefault();
+                    const tot = parseInt(perfForm.total, 10);
+                    const ac = parseInt(perfForm.acertos, 10);
+                    if (isNaN(tot) || isNaN(ac) || tot <= 0 || ac < 0 || ac > tot) {
+                        showToast("Valores inválidos. Verifique os números preenchidos.", "error");
+                        return;
+                    }
+
+                    setPerformanceData(prev => {
+                        const current = prev[perfForm.disciplina] || { total: 0, acertos: 0 };
+                        return {
+                            ...prev,
+                            [perfForm.disciplina]: {
+                                total: current.total + tot,
+                                acertos: current.acertos + ac
+                            }
+                        };
+                    });
+                    
+                    showToast("Questões registradas!", "success");
+                    setPerfForm({ ...perfForm, total: 0, acertos: 0 }); 
+                };
+
+                const perfEntries = Object.entries(performanceData).sort((a,b) => b[1].total - a[1].total);
+                const allDisciplines = [];
+                editalData.forEach(cat => cat.disciplinas.forEach(d => allDisciplines.push(d.nome)));
+
+                return (
+                    <div className="space-y-6 animate-fade-in">
+                        <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                            <h2 className="text-xl font-bold text-slate-800 mb-4 flex items-center gap-2">
+                                <Icons.Target /> Registrar Questões
+                            </h2>
+                            <form onSubmit={handleAddPerf} className="flex flex-col md:flex-row gap-4 items-end">
+                                <div className="flex-1 w-full">
+                                    <label className="block text-xs font-bold text-slate-500 mb-1 uppercase">Disciplina</label>
+                                    <select 
+                                        value={perfForm.disciplina} 
+                                        onChange={e => setPerfForm({...perfForm, disciplina: e.target.value})}
+                                        className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none bg-white"
+                                    >
+                                        {allDisciplines.map(d => <option key={d} value={d}>{d}</option>)}
+                                    </select>
+                                </div>
+                                <div className="w-full md:w-32">
+                                    <label className="block text-xs font-bold text-slate-500 mb-1 uppercase">Total</label>
+                                    <input type="number" min="1" required value={perfForm.total || ''} onChange={e => setPerfForm({...perfForm, total: e.target.value})} className="w-full p-3 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Ex: 20"/>
+                                </div>
+                                <div className="w-full md:w-32">
+                                    <label className="block text-xs font-bold text-slate-500 mb-1 uppercase">Acertos</label>
+                                    <input type="number" min="0" required value={perfForm.acertos || ''} onChange={e => setPerfForm({...perfForm, acertos: e.target.value})} className="w-full p-3 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Ex: 15"/>
+                                </div>
+                                <button type="submit" className="w-full md:w-auto px-6 py-3 bg-indigo-600 text-white font-bold rounded-lg hover:bg-indigo-700 transition-colors flex items-center justify-center gap-2">
+                                    <Icons.Plus /> Adicionar
+                                </button>
+                            </form>
+                        </div>
+
+                        {perfEntries.length > 0 ? (
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                {perfEntries.map(([disc, data]) => {
+                                    const perc = Math.round((data.acertos / data.total) * 100);
+                                    return (
+                                        <div key={disc} className="bg-white p-5 rounded-xl shadow-sm border border-slate-200 flex items-center gap-4">
+                                            <div className="w-16 h-16 rounded-full flex-shrink-0 flex items-center justify-center relative"
+                                                style={{ background: `conic-gradient(${perc >= 80 ? '#10b981' : perc >= 60 ? '#f59e0b' : '#ef4444'} ${perc}%, #e2e8f0 0)` }}>
+                                                <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center absolute">
+                                                    <span className="text-sm font-bold text-slate-700">{perc}%</span>
+                                                </div>
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <h4 className="font-bold text-slate-800 text-sm truncate" title={disc}>{disc}</h4>
+                                                <p className="text-xs text-slate-500 mt-1">{data.acertos} acertos de {data.total}</p>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        ) : (
+                            <div className="text-center p-10 bg-slate-50 rounded-xl border border-dashed border-slate-300">
+                                <p className="text-slate-500">Nenhuma bateria de questões registrada ainda.</p>
+                            </div>
+                        )}
+                    </div>
+                );
+            };
+
+            return (
+                <div className="min-h-screen flex flex-col md:flex-row relative">
+                    {/* Toast Notification */}
+                    {toast && (
+                        <div className="fixed top-4 md:bottom-4 md:top-auto right-4 z-50 animate-fade-in">
+                            <div className={`px-4 py-3 rounded-lg shadow-lg text-white font-medium flex items-center gap-2 ${toast.type === 'error' ? 'bg-red-500' : toast.type === 'success' ? 'bg-emerald-500' : 'bg-indigo-600'}`}>
+                                {toast.message}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Navegação */}
+                    <nav className="bg-white border-b md:border-r md:border-b-0 border-slate-200 w-full md:w-64 flex-shrink-0 z-10 sticky top-0 md:h-screen">
+                        <div className="p-4 md:p-6 flex justify-between items-center md:block">
+                            <div>
+                                <h1 className="text-xl md:text-2xl font-black text-indigo-900 tracking-tight">TRTs<span className="text-indigo-500">2027</span></h1>
+                                <p className="text-xs text-slate-500 mt-1 font-medium hidden md:block">com base no TRT-6 2024</p>
+                            </div>
+                        </div>
+                        <ul className="flex flex-row md:flex-col gap-1 p-2 md:p-4 overflow-x-auto scrollbar-hide">
+                            {[
+                                { id: 'dashboard', label: 'Dashboard', icon: <Icons.LayoutDashboard /> },
+                                { id: 'edital', label: 'Edital', icon: <Icons.ListChecks /> },
+                                { id: 'cronograma', label: 'Cronograma', icon: <Icons.Calendar /> },
+                                { id: 'timer', label: 'Foco (Timer)', icon: <Icons.Timer /> },
+                                { id: 'sounds', label: 'Sons', icon: <span>🎧</span> },
+                                { id: 'performance', label: 'Desempenho', icon: <Icons.Target /> }
+                            ].map(item => (
+                                <li key={item.id} className="flex-shrink-0">
+                                    <button 
+                                        onClick={() => setActiveTab(item.id)} 
+                                        className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-colors ${activeTab === item.id ? 'bg-indigo-50 text-indigo-700' : 'text-slate-600 hover:bg-slate-50'}`}
+                                    >
+                                        {item.icon} <span className="whitespace-nowrap">{item.label}</span>
+                                    </button>
+                                </li>
+                            ))}
+                        </ul>
+                        <div className="hidden md:block px-4 pb-5 mt-auto">
+                            <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 text-xs">
+                                <div className="flex items-center justify-between gap-2 mb-2">
+                                    <span className="font-semibold text-slate-600">☁️ {syncStatus}</span>
+                                    <span className={`w-2 h-2 rounded-full ${syncStatus.includes('Erro') ? 'bg-red-500' : syncStatus.includes('Salvando') ? 'bg-amber-500' : 'bg-emerald-500'}`}></span>
+                                </div>
+                                {cloudError && <p className="text-red-600 mb-2 break-words">{cloudError}</p>}
+                                <div className="grid grid-cols-2 gap-2">
+                                    <button onClick={exportBackup} className="px-2 py-2 rounded-lg bg-white border border-slate-200 hover:bg-slate-100 font-semibold">Backup</button>
+                                    <label className="px-2 py-2 rounded-lg bg-white border border-slate-200 hover:bg-slate-100 font-semibold text-center cursor-pointer">Importar<input type="file" accept="application/json,.json" className="hidden" onChange={importBackup} /></label>
+                                </div>
+                                <button onClick={onLogout} className="w-full mt-2 px-2 py-2 rounded-lg bg-slate-800 text-white hover:bg-slate-700 font-semibold">Sair</button>
+                                <p className="mt-2 text-slate-400 truncate" title={user.email}>{user.email}</p>
+                            </div>
+                        </div>
+                    </nav>
+
+                    {/* Área Principal */}
+                    <main className="flex-1 p-4 sm:p-6 md:p-8 overflow-y-auto w-full max-w-6xl mx-auto pb-24 md:pb-8">
+                        {activeTab === 'dashboard' && renderDashboard()}
+                        {activeTab === 'edital' && renderEdital()}
+                        {activeTab === 'cronograma' && renderCronograma()}
+                        {activeTab === 'timer' && renderTimer()}
+                        {activeTab === 'sounds' && renderSounds()}
+                        {activeTab === 'performance' && renderPerformance()}
+                    </main>
+                    {/* Mini reprodutor persistente: fica fora do conteúdo das abas */}
+                    <div className="fixed bottom-3 left-3 right-3 md:left-auto md:right-6 md:bottom-5 md:w-80 z-40 bg-white/95 backdrop-blur border border-slate-200 shadow-xl rounded-2xl p-3">
+                        <div className="flex items-center justify-between gap-3"><button onClick={() => setActiveTab('sounds')} className="flex items-center gap-2 min-w-0 text-left"><span className="text-xl">🎧</span><span className="min-w-0"><span className="block text-sm font-bold text-slate-800">Sons para estudar</span><span className="block text-xs text-slate-500 truncate">{SOUND_TRACKS.filter(t => soundActive[t.id]).map(t => t.name).join(' + ') || 'Nenhum som reproduzindo'}</span></span></button><div className="flex items-center gap-1"><button onClick={() => setActiveTab('sounds')} className="p-2 rounded-lg hover:bg-slate-100 text-slate-600" title="Abrir sons">⚙</button><button onClick={stopAllSounds} className="p-2 rounded-lg hover:bg-slate-100 text-slate-600" title="Parar todos os sons">■</button></div></div>
+                        <div className="mt-2 flex items-center gap-3"><span className="text-xs text-slate-500">Vol.</span><input aria-label="Volume geral do mini reprodutor" type="range" min="0" max="100" value={masterVolume} onChange={e => setMasterVolume(Number(e.target.value))} className="flex-1 accent-indigo-600"/><span className="text-xs tabular-nums text-slate-500 w-8 text-right">{masterVolume}%</span></div>
+                    </div>
+                </div>
+            );
+        }
+
+        function AuthGate() {
+            const [session, setSession] = React.useState(null);
+            const [loading, setLoading] = React.useState(true);
+            const [email, setEmail] = React.useState('');
+            const [password, setPassword] = React.useState('');
+            const [error, setError] = React.useState('');
+            const [busy, setBusy] = React.useState(false);
+
+            React.useEffect(() => {
+                supabase.auth.getSession().then(({ data }) => {
+                    setSession(data.session);
+                    setLoading(false);
+                });
+                const { data: listener } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+                    setSession(nextSession);
+                    setLoading(false);
+                });
+                return () => listener.subscription.unsubscribe();
+            }, []);
+
+            const login = async (e) => {
+                e.preventDefault();
+                setBusy(true);
+                setError('');
+                const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
+                if (error) setError(error.message || 'Não foi possível entrar.');
+                setBusy(false);
+            };
+
+            if (loading) return (
+                <div className="min-h-screen flex items-center justify-center bg-slate-50">
+                    <div className="text-center"><div className="text-3xl mb-3">☁️</div><p className="font-semibold text-slate-600">Carregando painel...</p></div>
+                </div>
+            );
+
+            if (!session) return (
+                <div className="min-h-screen flex items-center justify-center bg-slate-50 p-4">
+                    <div className="w-full max-w-md bg-white rounded-2xl shadow-xl border border-slate-200 p-6 sm:p-8">
+                        <div className="text-center mb-6">
+                            <h1 className="text-2xl font-black text-indigo-900">TRTs<span className="text-indigo-500">2027</span></h1>
+                            <p className="text-sm text-slate-500 mt-2">Painel de Estudos sincronizado na nuvem</p>
+                        </div>
+                        <form onSubmit={login} className="space-y-4">
+                            <div><label className="block text-sm font-semibold text-slate-600 mb-1">E-mail</label><input type="email" required value={email} onChange={e => setEmail(e.target.value)} className="w-full px-3 py-3 rounded-xl border border-slate-300 outline-none focus:ring-2 focus:ring-indigo-400" placeholder="seu@email.com" /></div>
+                            <div><label className="block text-sm font-semibold text-slate-600 mb-1">Senha</label><input type="password" required value={password} onChange={e => setPassword(e.target.value)} className="w-full px-3 py-3 rounded-xl border border-slate-300 outline-none focus:ring-2 focus:ring-indigo-400" placeholder="Sua senha" /></div>
+                            {error && <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-xl p-3">{error}</div>}
+                            <button disabled={busy} className="w-full py-3 rounded-xl bg-indigo-600 text-white font-bold hover:bg-indigo-700 disabled:opacity-60">{busy ? 'Entrando...' : 'Entrar'}</button>
+                        </form>
+                        <p className="text-xs text-slate-400 text-center mt-5">Seus dados ficam vinculados à sua conta e protegidos pelas regras de segurança do banco.</p>
+                    </div>
+                </div>
+            );
+
+            return <App user={session.user} onLogout={() => supabase.auth.signOut()} />;
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<AuthGate />);
+    </script>
+</body>
+</html>
